@@ -38,6 +38,12 @@ li b{color:var(--ink)}
 code{background:var(--brand-soft);color:var(--brand);padding:2px 7px;border-radius:6px;
   font-size:13px;word-break:break-all}
 footer{text-align:center;color:var(--sub);font-size:13px;margin-top:26px;line-height:1.9}
+.invite{border:2px solid var(--brand)}
+.invite .code{font-size:40px;font-weight:800;letter-spacing:8px;color:var(--brand);
+  text-align:center;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.copy{display:block;width:100%;border:0;background:var(--brand-soft);color:var(--brand);
+  padding:14px;border-radius:14px;font-size:16px;font-weight:700;font-family:inherit;margin:10px 0 14px}
+.hidden{display:none}
 </style>
 </head>
 <body>
@@ -55,6 +61,16 @@ footer{text-align:center;color:var(--sub);font-size:13px;margin-top:26px;line-he
     <p class="tag">아이와 약속한 사용 규칙을 함께 지켜요</p>
   </header>
 
+  <!-- 초대 링크(?c=코드&k=c|p)로 들어왔을 때만 보인다 (v2.4) -->
+  <div class="card invite hidden" id="inv">
+    <span class="role" id="invRole">초대받았어요</span>
+    <h2 id="invTitle">초대 코드</h2>
+    <div class="code" id="invCode"></div>
+    <p class="hint" style="text-align:center;margin:0">1시간 안에, 한 번만 쓸 수 있어요</p>
+    <button type="button" class="copy" id="invCopy">코드 복사</button>
+    <ol id="invSteps"></ol>
+  </div>
+
   <div class="card">
     <a class="dl" href="ponyaksok.apk" download>설치 파일 받기</a>
     <div class="meta">
@@ -70,7 +86,8 @@ footer{text-align:center;color:var(--sub);font-size:13px;margin-top:26px;line-he
       <li>위 버튼으로 설치 파일을 받아 <b>설치</b>합니다</li>
       <li>앱을 열고 <b>「보호자로 시작」</b> 을 누릅니다</li>
       <li>알림 권한을 <b>허용</b> 합니다</li>
-      <li>아이 폰에 뜬 <b>연결 코드 12자리</b>와 <b>승인 코드 4자리</b>를 입력하면 연결됩니다</li>
+      <li><b>「초대 코드 만들기」</b> 를 누르고, 아이 폰에 그 6자리를 입력하면 연결됩니다.
+          폰약속이 없는 아이 폰은 보호자 화면의 <b>QR 을 카메라로 찍으면</b> 이 페이지가 열립니다</li>
     </ol>
   </div>
 
@@ -81,8 +98,8 @@ footer{text-align:center;color:var(--sub);font-size:13px;margin-top:26px;line-he
     <ol>
       <li>같은 파일을 받아 <b>설치</b>합니다</li>
       <li>앱을 열고 <b>「아이 기기로 설정」</b> 을 누릅니다</li>
-      <li>화면에 <b>연결 코드 12자리</b>와 <b>승인 코드 4자리</b>가 표시됩니다.
-          <b>「연결 코드 복사」</b> 로 보호자에게 보내주세요</li>
+      <li><b>「보호자 초대 코드 입력」</b> 을 누르고 보호자 폰에 뜬 6자리를 입력합니다
+          (복사해 두었으면 자동으로 채워집니다)</li>
       <li><b>권한 5가지</b>를 순서대로 켭니다 (설정 화면으로 이동합니다)</li>
       <li>마지막에 <b>보호자 PIN</b> 을 정합니다. 이후 이 화면을 열 때 필요합니다</li>
     </ol>
@@ -118,5 +135,35 @@ footer{text-align:center;color:var(--sub);font-size:13px;margin-top:26px;line-he
   </footer>
 
 </div>
+<script>
+/* 초대 링크: ?c=123456&k=c(아이 폰) | k=p(보호자) */
+(function(){
+  var q = new URLSearchParams(location.search), code = q.get("c") || "";
+  if (!/^\d{6}$/.test(code)) return;
+  var parent = q.get("k") === "p";
+  var $ = function(id){ return document.getElementById(id); };
+  $("invCode").textContent = code;
+  $("invRole").textContent = parent ? "보호자 초대" : "아이 휴대폰 연결";
+  $("invTitle").textContent = parent ? "함께 관리할 보호자로 초대받았어요" : "이 폰을 보호자 폰과 연결해요";
+  var steps = parent ? [
+    "먼저 <b>코드 복사</b>를 누르고, 아래 <b>설치 파일 받기</b>로 설치합니다",
+    "앱을 열고 <b>「보호자로 시작」</b> → 로그인합니다",
+    "<b>「다른 보호자에게 초대받았어요」</b> 칸에 코드를 붙여넣고 <b>참여하기</b>"
+  ] : [
+    "먼저 <b>코드 복사</b>를 누르고, 아래 <b>설치 파일 받기</b>로 설치합니다",
+    "앱을 열고 <b>「아이 기기로 설정」</b> 을 누릅니다",
+    "<b>「보호자 초대 코드 입력」</b> 을 누르면 코드가 채워져 있어요. <b>연결</b>을 누릅니다",
+    "보호자 폰에서 폰약속을 열면 연결이 끝납니다. 이어서 권한을 켜주세요"
+  ];
+  $("invSteps").innerHTML = steps.map(function(s){ return "<li>" + s + "</li>"; }).join("");
+  $("inv").classList.remove("hidden");
+  $("invCopy").onclick = function(){
+    var done = function(){ $("invCopy").textContent = "복사했어요 ✓"; };
+    if (navigator.clipboard && navigator.clipboard.writeText)
+      navigator.clipboard.writeText(code).then(done, function(){ $("invCopy").textContent = "길게 눌러 코드를 복사하세요"; });
+    else $("invCopy").textContent = "길게 눌러 코드를 복사하세요";
+  };
+})();
+</script>
 </body>
 </html>
